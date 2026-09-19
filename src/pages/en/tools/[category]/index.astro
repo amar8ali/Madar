@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ToolCategoryPage from '../../../../components/ToolCategoryPage.astro';
+import { categories } from '../../../../data/categories';
+import type { ToolCategoryDefinition } from '../../../../data/types';
+
+interface Props {
+  category: ToolCategoryDefinition;
+}
+
+export function getStaticPaths() {
+  return categories.map((category) => ({
+    params: { category: category.slug },
+    props: { category },
+  }));
+}
+
+const { category } = Astro.props;
+const pageTitle = category.title.en;
+const pageDescription = category.description.en;
+---
+
+<BaseLayout lang="en" title={pageTitle} description={pageDescription}>
+  <ToolCategoryPage lang="en" category={category} />
+</BaseLayout>

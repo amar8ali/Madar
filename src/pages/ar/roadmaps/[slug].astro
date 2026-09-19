@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RoadmapPage from '../../../components/RoadmapPage.astro';
+import { getRoadmapsWithDetailPage } from '../../../data/roadmaps';
+import type { RoadmapDefinition } from '../../../data/types';
+
+interface Props {
+  roadmap: RoadmapDefinition;
+}
+
+export function getStaticPaths() {
+  // Only roadmaps with real `sections` content get a page — see the
+  // module doc in src/data/roadmaps.ts for why the other four stay
+  // preview-only rather than getting thin, padded-out pages.
+  return getRoadmapsWithDetailPage().map((roadmap) => ({
+    params: { slug: roadmap.slug },
+    props: { roadmap },
+  }));
+}
+
+const { roadmap } = Astro.props;
+const pageTitle = roadmap.seo?.title?.ar ?? roadmap.title.ar;
+const pageDescription = roadmap.seo?.description?.ar ?? roadmap.description.ar;
+---
+
+<BaseLayout lang="ar" title={pageTitle} description={pageDescription}>
+  <RoadmapPage lang="ar" roadmap={roadmap} />
+</BaseLayout>

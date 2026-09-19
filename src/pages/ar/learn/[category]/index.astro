@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import LearnCategoryPage from '../../../../components/LearnCategoryPage.astro';
+import { engineeringSubcategories } from '../../../../data/categories';
+import type { EngineeringSubcategoryDefinition } from '../../../../data/types';
+
+interface Props {
+  category: EngineeringSubcategoryDefinition;
+}
+
+export function getStaticPaths() {
+  // One page per Engineering subcategory — same scaling pattern as the
+  // Tool category route: the page exists whether or not it has content
+  // yet (see LearnCategoryPage's empty state).
+  return engineeringSubcategories.map((category) => ({
+    params: { category: category.id },
+    props: { category },
+  }));
+}
+
+const { category } = Astro.props;
+const pageTitle = category.title.ar;
+---
+
+<BaseLayout lang="ar" title={pageTitle}>
+  <LearnCategoryPage lang="ar" category={category} />
+</BaseLayout>

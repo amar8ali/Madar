@@ -1,0 +1,138 @@
+---
+/**
+ * A small, subtle CSS/SVG visualization of current flowing through a
+ * resistor, used to preview MADAR's future "interactive visualization"
+ * style for engineering tools (spec section 10 / 14). This is
+ * intentionally NOT the real Ohm's Law calculator — just a lightweight
+ * educational-looking animation with zero JS and no animation library.
+ */
+interface Props {
+  /** Accessible label describing what the visual shows. */
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+<div class="circuit-visual" role="img" aria-label={label}>
+  <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- circuit path: one continuous closed loop so the animated dots
+         travel smoothly around it -->
+    <path
+      class="circuit-path"
+      d="M20 70 H300 V20 H20 Z"
+      fill="none"
+      stroke="var(--color-border)"
+      stroke-width="2.5"
+    ></path>
+
+    <!-- resistor body -->
+    <path
+      class="resistor"
+      d="M90 70 l8 -16 l14 32 l14 -32 l14 32 l14 -32 l14 32 l8 -16"
+      fill="none"
+      stroke="var(--color-text)"
+      stroke-width="2.5"
+      stroke-linejoin="round"
+    ></path>
+
+    <!-- battery -->
+    <g class="battery" transform="translate(20,20)">
+      <line x1="0" y1="-14" x2="0" y2="14" stroke="var(--color-text)" stroke-width="3" />
+      <line x1="8" y1="-8" x2="8" y2="8" stroke="var(--color-text)" stroke-width="1.5" />
+    </g>
+
+    <!-- current flow dots, animated along the loop -->
+    <circle class="flow-dot dot-1" r="3.5" fill="var(--color-accent)"></circle>
+    <circle class="flow-dot dot-2" r="3.5" fill="var(--color-accent)"></circle>
+    <circle class="flow-dot dot-3" r="3.5" fill="var(--color-accent)"></circle>
+  </svg>
+
+  <div class="circuit-legend">
+    <span><i class="dot dot-v"></i>V</span>
+    <span><i class="dot dot-r"></i>R</span>
+    <span><i class="dot dot-i"></i>I</span>
+  </div>
+</div>
+
+<style>
+  .circuit-visual {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6) var(--space-5) var(--space-4);
+  }
+
+  .circuit-visual svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .resistor {
+    stroke: var(--color-primary);
+  }
+
+  .flow-dot {
+    offset-path: path('M20 70 H300 V20 H20 Z');
+    animation: flow 4.5s linear infinite;
+  }
+
+  .dot-2 {
+    animation-delay: -1.5s;
+  }
+
+  .dot-3 {
+    animation-delay: -3s;
+  }
+
+  @keyframes flow {
+    from {
+      offset-distance: 0%;
+    }
+    to {
+      offset-distance: 100%;
+    }
+  }
+
+  .circuit-legend {
+    display: flex;
+    gap: var(--space-5);
+    justify-content: center;
+    margin-top: var(--space-4);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .circuit-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot-v {
+    background: var(--color-text);
+  }
+
+  .dot-r {
+    background: var(--color-primary);
+  }
+
+  .dot-i {
+    background: var(--color-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flow-dot {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+</style>

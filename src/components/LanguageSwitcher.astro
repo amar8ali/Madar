@@ -1,0 +1,59 @@
+---
+import { LANG_STORAGE_KEY } from '../i18n/config';
+import { getLocalizedAlternate } from '../i18n/utils';
+import type { Lang } from '../i18n/config';
+
+interface Props {
+  currentLang: Lang;
+  targetLang: Lang;
+  targetLabel: string;
+  /** Extra class for styling (e.g. compact for mobile menu) */
+  class?: string;
+}
+
+const { currentLang, targetLang, targetLabel, class: className = '' } = Astro.props;
+const targetHref = getLocalizedAlternate(Astro.url.pathname, targetLang);
+---
+
+<a
+  href={targetHref}
+  id={`lang-switch-${targetLang}`}
+  class={`lang-switch ${className}`}
+  data-lang={targetLang}
+  hreflang={targetLang}
+  aria-label={targetLabel}
+>
+  {targetLabel}
+</a>
+
+<style>
+  .lang-switch {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    transition: color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard);
+  }
+
+  .lang-switch:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+</style>
+
+<script define:vars={{ LANG_STORAGE_KEY }}>
+  document.querySelectorAll('.lang-switch').forEach((el) => {
+    el.addEventListener('click', () => {
+      const lang = el.getAttribute('data-lang');
+      if (!lang) return;
+      try {
+        localStorage.setItem(LANG_STORAGE_KEY, lang);
+      } catch (e) {
+        /* ignore — storage may be unavailable */
+      }
+    });
+  });
+</script>

@@ -1,0 +1,241 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const otherLang: Lang = lang === 'ar' ? 'en' : 'ar';
+
+const navItems = [
+  { href: localizePath(lang, '/tools'), label: t.nav.tools },
+  { href: localizePath(lang, '/roadmaps'), label: t.nav.roadmaps },
+  { href: localizePath(lang, '/learn'), label: t.nav.learn },
+  { href: `${localizePath(lang, '/')}#blog`, label: t.nav.blog },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href={localizePath(lang, '/')} class="brand">
+      <span class="brand-mark" aria-hidden="true">◆</span>
+      <span>{t.meta.siteName}</span>
+    </a>
+
+    <nav class="primary-nav" aria-label={t.nav.menu}>
+      <ul>
+        {
+          navItems.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                class="nav-link"
+                aria-current={
+                  !item.href.includes('#') && currentPath.startsWith(item.href) ? 'page' : undefined
+                }
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <a href={localizePath(lang, '/search')} class="search-trigger" aria-label={t.nav.search}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+          <path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        <span class="search-trigger-label">{t.nav.search}</span>
+      </a>
+
+      <LanguageSwitcher currentLang={lang} targetLang={otherLang} targetLabel={t.nav.switchLang} class="desktop-only" />
+      <ThemeToggle label={t.nav.toggleTheme} />
+
+      <button
+        id="mobile-menu-toggle"
+        type="button"
+        class="mobile-menu-toggle"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        aria-label={t.nav.menu}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="mobile-menu" hidden>
+    <nav aria-label={t.nav.menu}>
+      <ul>
+        {
+          navItems.map((item) => (
+            <li>
+              <a href={item.href} class="mobile-nav-link">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a href={localizePath(lang, '/search')} class="mobile-nav-link">
+            {t.nav.search}
+          </a>
+        </li>
+      </ul>
+      <div class="mobile-menu-footer">
+        <LanguageSwitcher currentLang={lang} targetLang={otherLang} targetLabel={t.nav.switchLang} />
+      </div>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header-inner {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-5);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--color-text);
+    flex-shrink: 0;
+  }
+
+  .brand-mark {
+    color: var(--color-primary);
+    font-size: 1.1rem;
+  }
+
+  .primary-nav ul {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .nav-link {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
+
+  .nav-link:hover,
+  .nav-link[aria-current='page'] {
+    color: var(--color-text);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard);
+  }
+
+  .search-trigger:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  .mobile-menu {
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .mobile-menu nav {
+    padding: var(--space-4) var(--space-5) var(--space-6);
+  }
+
+  .mobile-nav-link {
+    display: block;
+    padding: var(--space-3) 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mobile-menu-footer {
+    margin-top: var(--space-5);
+  }
+
+  @media (max-width: 860px) {
+    .primary-nav,
+    .search-trigger-label {
+      display: none;
+    }
+
+    .search-trigger {
+      padding: 0.55rem;
+    }
+
+    .desktop-only {
+      display: none;
+    }
+
+    .mobile-menu-toggle {
+      display: inline-flex;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.getElementById('mobile-menu-toggle');
+  const menu = document.getElementById('mobile-menu');
+
+  toggle?.addEventListener('click', () => {
+    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!isOpen));
+    if (menu) menu.hidden = isOpen;
+  });
+</script>

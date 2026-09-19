@@ -1,0 +1,40 @@
+---
+/**
+ * MADAR — AdSlot
+ *
+ * Reusable placement wrapper for future Google AdSense integration
+ * (spec section 25 / task section 13). This component intentionally
+ * renders NOTHING visible yet — no AdSense script is loaded, no
+ * placeholder ad box is shown. It exists purely so tool/content pages
+ * can be written against a stable <AdSlot position="..." /> API now,
+ * and ad units can be wired in later without touching every page.
+ *
+ * DO NOT render fake ad creative here. DO NOT add the AdSense script
+ * tag until an approved AdSense account + policy review is in place.
+ */
+
+type Position = 'top' | 'middle' | 'bottom' | 'sidebar';
+type Device = 'desktop' | 'mobile' | 'all';
+
+interface Props {
+  position: Position;
+  device?: Device;
+  /** Optional identifier for future analytics/placement tracking. */
+  id?: string;
+}
+
+const { position, device = 'all', id } = Astro.props;
+---
+
+<div
+  class="ad-slot"
+  data-ad-position={position}
+  data-ad-device={device}
+  data-ad-id={id}
+  data-ad-status="not-configured"
+  aria-hidden="true"
+  hidden
+>
+  {/* Reserved for future AdSense unit. Rendered hidden and empty
+      until AdSense is actually connected — see component doc above. */}
+</div>

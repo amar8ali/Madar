@@ -1,0 +1,83 @@
+---
+import type { Lang } from '../i18n/config';
+import { languages, langConfig } from '../i18n/config';
+import { useTranslations, getLocalizedAlternate } from '../i18n/utils';
+import ThemeInit from '../components/ThemeInit.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  lang: Lang;
+  /** Page title. If omitted, falls back to the site default title. */
+  title?: string;
+  /** Page meta description. Falls back to the site default description. */
+  description?: string;
+  /** Absolute or root-relative OG image path. */
+  ogImage?: string;
+}
+
+const { lang, title, description, ogImage = '/og-default.svg' } = Astro.props;
+const t = useTranslations(lang);
+const { dir, locale } = langConfig[lang];
+
+const pageTitle = title ? `${title} · ${t.meta.siteName}` : t.meta.defaultTitle;
+const pageDescription = description ?? t.meta.defaultDescription;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://madar.example');
+
+// hreflang alternates: one entry per supported language, pointing to
+// the equivalent page. See i18n/utils.getLocalizedAlternate — this is
+// what keeps hreflang honest as more routes are added later.
+const alternates = languages.map((altLang) => ({
+  lang: altLang,
+  href: new URL(
+    getLocalizedAlternate(Astro.url.pathname, altLang),
+    Astro.site ?? 'https://madar.example'
+  ).toString(),
+}));
+---
+
+<!doctype html>
+<html lang={locale} dir={dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={canonicalURL} />
+
+    {alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={alt.href} />)}
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(getLocalizedAlternate(Astro.url.pathname, 'ar'), Astro.site ?? 'https://madar.example').toString()}
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={t.meta.siteName} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={locale} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+
+    <ThemeInit />
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">
+      {lang === 'ar' ? 'تخطَّ إلى المحتوى الرئيسي' : 'Skip to main content'}
+    </a>
+    <Header lang={lang} />
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

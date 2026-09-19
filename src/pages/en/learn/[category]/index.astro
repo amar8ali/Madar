@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import LearnCategoryPage from '../../../../components/LearnCategoryPage.astro';
+import { engineeringSubcategories } from '../../../../data/categories';
+import type { EngineeringSubcategoryDefinition } from '../../../../data/types';
+
+interface Props {
+  category: EngineeringSubcategoryDefinition;
+}
+
+export function getStaticPaths() {
+  return engineeringSubcategories.map((category) => ({
+    params: { category: category.id },
+    props: { category },
+  }));
+}
+
+const { category } = Astro.props;
+const pageTitle = category.title.en;
+---
+
+<BaseLayout lang="en" title={pageTitle}>
+  <LearnCategoryPage lang="en" category={category} />
+</BaseLayout>

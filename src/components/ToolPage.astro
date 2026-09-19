@@ -1,0 +1,353 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import type { ToolDefinition } from '../data/types';
+import { getToolContentById } from '../data/toolContent';
+import { getRelatedTools } from '../data/tools';
+import { getCategoryById, engineeringSubcategories } from '../data/categories';
+import { getRoadmapById } from '../data/roadmaps';
+import { resolveLearnPath } from '../data/learn';
+import Breadcrumb from './Breadcrumb.astro';
+import ToolCard from './ToolCard.astro';
+import CalculatorForm from './CalculatorForm.astro';
+import OhmsLawVisual from './OhmsLawVisual.astro';
+
+interface Props {
+  lang: Lang;
+  tool: ToolDefinition;
+}
+
+const { lang, tool } = Astro.props;
+const t = useTranslations(lang);
+const content = getToolContentById(tool.id);
+const category = getCategoryById(tool.category);
+const subcategory = tool.subcategory
+  ? engineeringSubcategories.find((s) => s.id === tool.subcategory)
+  : undefined;
+
+const relatedTools = getRelatedTools(tool);
+const relatedRoadmaps = (tool.relatedRoadmaps ?? [])
+  .map((id) => getRoadmapById(id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+const breadcrumbItems = [
+  { label: t.toolPage.home, href: localizePath(lang, '/') },
+  { label: t.toolPage.tools, href: localizePath(lang, '/tools') },
+  ...(category
+    ? [{ label: category.title[lang], href: localizePath(lang, `/tools/${category.slug}`) }]
+    : []),
+  { label: tool.title[lang] },
+];
+
+// Only ohms-law has a bespoke "see how it works" visual right now
+// (reusing the Phase 1 circuit animation). Other tools simply don't
+// render that section — no placeholder pretending a visual exists.
+// NOTE: Astro requires a capitalized identifier to treat this as a
+// component reference rather than a literal HTML tag name.
+const SeeHowItWorksVisual = tool.id === 'ohms-law' ? OhmsLawVisual : null;
+---
+
+<article class="tool-page">
+  <div class="container">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <header class="tool-header">
+      {subcategory && <span class="badge badge-muted">{subcategory.title[lang]}</span>}
+      <h1>{tool.title[lang]}</h1>
+      <p class="tool-description">{tool.description[lang]}</p>
+    </header>
+
+    <section class="tool-interface" aria-label={t.calculator.result}>
+      <CalculatorForm
+        lang={lang}
+        calculatorId={tool.id}
+        labels={{
+          solveFor: t.calculator.solveFor,
+          result: t.calculator.result,
+          reset: t.calculator.reset,
+        }}
+      />
+    </section>
+
+    {
+      content && (
+        <div class="tool-content grid grid-2">
+          <section class="content-block">
+            <h2>{t.toolPage.formula}</h2>
+            <p class="formula">{content.formula[lang]}</p>
+          </section>
+
+          <section class="content-block">
+            <h2>{t.toolPage.variables}</h2>
+            <table class="variables-table">
+              <tbody>
+                {content.variables.map((v) => (
+                  <tr>
+                    <td class="variable-symbol">{v.symbol}</td>
+                    <td>{v.label[lang]}</td>
+                    <td class="variable-unit">{v.unit}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <section class="content-block content-block-wide">
+            <h2>{t.toolPage.explanation}</h2>
+            <p>{content.explanation[lang]}</p>
+          </section>
+
+          <section class="content-block">
+            <h2>{t.toolPage.workedExample}</h2>
+            <p>{content.workedExample[lang]}</p>
+          </section>
+
+          <section class="content-block">
+            <h2>{t.toolPage.assumptions}</h2>
+            <ul class="bullet-list">
+              {content.assumptions.map((a) => (
+                <li>{a[lang]}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section class="content-block">
+            <h2>{t.toolPage.commonMistakes}</h2>
+            <ul class="bullet-list">
+              {content.commonMistakes.map((m) => (
+                <li>{m[lang]}</li>
+              ))}
+            </ul>
+          </section>
+
+          {content.faq && content.faq.length > 0 && (
+            <section class="content-block content-block-wide">
+              <h2>{t.toolPage.faq}</h2>
+              <dl class="faq-list">
+                {content.faq.map((item) => (
+                  <>
+                    <dt>{item.question[lang]}</dt>
+                    <dd>{item.answer[lang]}</dd>
+                  </>
+                ))}
+              </dl>
+            </section>
+          )}
+        </div>
+      )
+    }
+
+    {
+      SeeHowItWorksVisual && (
+        <section class="content-block see-how-it-works">
+          <h2>{t.toolPage.seeHowItWorks}</h2>
+          <SeeHowItWorksVisual
+            label={
+              lang === 'ar'
+                ? 'رسم توضيحي لدارة كهربائية بسيطة يوضح تدفق التيار عبر مقاومة'
+                : 'Illustration of a simple electrical circuit showing current flowing through a resistor'
+            }
+          />
+        </section>
+      )
+    }
+
+    {
+      relatedTools.length > 0 && (
+        <section class="content-block">
+          <h2>{t.toolPage.relatedTools}</h2>
+          <div class="grid grid-tools">
+            {relatedTools.map((related) => (
+              <ToolCard lang={lang} tool={related} />
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      (tool.relatedLearn?.length || relatedRoadmaps.length > 0) && (
+        <section class="content-block related-links">
+          {tool.relatedLearn && tool.relatedLearn.length > 0 && (
+            <div>
+              <h3>{t.toolPage.relatedLearn}</h3>
+              <ul class="bullet-list">
+                {tool.relatedLearn.map((path) => {
+                  const learnPage = resolveLearnPath(path);
+                  return (
+                    <li>
+                      {learnPage ? (
+                        <a href={localizePath(lang, `/learn/${learnPage.category}/${learnPage.slug}`)} class="link-arrow">
+                          {learnPage.title[lang]}
+                        </a>
+                      ) : (
+                        <span class="badge badge-muted">{path}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {relatedRoadmaps.length > 0 && (
+            <div>
+              <h3>{t.toolPage.relatedRoadmap}</h3>
+              <ul class="bullet-list">
+                {relatedRoadmaps.map((roadmap) => (
+                  <li>
+                    <a
+                      href={
+                        roadmap.sections && roadmap.sections.length > 0
+                          ? localizePath(lang, `/roadmaps/${roadmap.slug}`)
+                          : `${localizePath(lang, '/')}#roadmaps`
+                      }
+                      class="link-arrow"
+                    >
+                      {roadmap.title[lang]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .tool-page {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+
+  .tool-header {
+    max-width: 720px;
+    margin-bottom: var(--space-6);
+  }
+
+  .tool-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+    margin-top: var(--space-2);
+  }
+
+  .tool-description {
+    margin-top: var(--space-3);
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+  }
+
+  .tool-interface {
+    margin-bottom: var(--space-8);
+  }
+
+  .tool-content {
+    margin-bottom: var(--space-8);
+    align-items: start;
+  }
+
+  .content-block {
+    margin-bottom: var(--space-8);
+  }
+
+  .content-block-wide {
+    grid-column: 1 / -1;
+  }
+
+  .content-block h2 {
+    font-size: 1.125rem;
+    margin-bottom: var(--space-3);
+  }
+
+  .content-block h3 {
+    font-size: 1rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .content-block p {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+  }
+
+  .formula {
+    font-family: var(--font-mono);
+    font-size: 1.375rem;
+    color: var(--color-primary);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    display: inline-block;
+  }
+
+  .variables-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  .variables-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .variable-symbol {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-primary);
+    width: 2.5rem;
+  }
+
+  .variable-unit {
+    color: var(--color-text-muted);
+    text-align: end;
+  }
+
+  .bullet-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .bullet-list li {
+    padding-inline-start: var(--space-4);
+    position: relative;
+  }
+
+  .bullet-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.6em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+  }
+
+  .faq-list dt {
+    font-weight: 600;
+    margin-top: var(--space-4);
+  }
+
+  .faq-list dd {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-6);
+  }
+
+  @media (max-width: 720px) {
+    .tool-content {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

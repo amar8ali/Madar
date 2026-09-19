@@ -1,0 +1,314 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import { tools, popularToolIds } from '../data/tools';
+import { categories } from '../data/categories';
+import { roadmaps, featuredRoadmapIds } from '../data/roadmaps';
+import { blogPreview } from '../data/blog';
+import ToolCard from './ToolCard.astro';
+import CategoryCard from './CategoryCard.astro';
+import RoadmapCard from './RoadmapCard.astro';
+import OhmsLawVisual from './OhmsLawVisual.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const popularTools = popularToolIds
+  .map((id) => tools.find((tool) => tool.id === id))
+  .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool));
+
+const featuredRoadmaps = featuredRoadmapIds
+  .map((id) => roadmaps.find((roadmap) => roadmap.id === id))
+  .filter((roadmap): roadmap is NonNullable<typeof roadmap> => Boolean(roadmap));
+
+const ohmsLawTool = tools.find((tool) => tool.id === 'ohms-law')!;
+---
+
+<!-- ============================= HERO ============================= -->
+<section class="hero">
+  <div class="container hero-inner">
+    <h1>{t.hero.headline}</h1>
+    <p class="hero-subtext">{t.hero.subtext}</p>
+
+    <div class="hero-ctas">
+      <a href={`${localizePath(lang, '/')}#popular-tools`} class="btn btn-primary">
+        {t.hero.ctaPrimary}
+      </a>
+      <a href={`${localizePath(lang, '/')}#roadmaps`} class="btn btn-secondary">
+        {t.hero.ctaSecondary}
+      </a>
+    </div>
+
+    <!--
+      Search UI shell only — Phase 1 does not implement the actual
+      search engine (spec section 19 / task section 9). This is a
+      static, non-functional input styled to establish the visual
+      system; it does not submit anywhere yet.
+    -->
+    <form class="hero-search" role="search" onsubmit="return false;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+        <path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </svg>
+      <input
+        type="search"
+        placeholder={t.hero.searchPlaceholder}
+        aria-label={t.hero.searchPlaceholder}
+        disabled
+      />
+    </form>
+  </div>
+</section>
+
+<!-- ======================= POPULAR TOOLS ======================= -->
+<section id="popular-tools" class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{t.sections.popularTools}</h2>
+      <p>{t.sections.popularToolsSub}</p>
+    </div>
+    <div class="grid grid-tools">
+      {popularTools.map((tool) => <ToolCard lang={lang} tool={tool} />)}
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CATEGORIES ======================= -->
+<section id="categories" class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <h2>{t.sections.categories}</h2>
+      <p>{t.sections.categoriesSub}</p>
+    </div>
+    <div class="grid grid-categories">
+      {categories.map((category) => <CategoryCard lang={lang} category={category} />)}
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ROADMAPS ======================= -->
+<section id="roadmaps" class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{t.sections.roadmaps}</h2>
+      <p>{t.sections.roadmapsSub}</p>
+    </div>
+    <div class="grid grid-roadmaps">
+      {featuredRoadmaps.map((roadmap) => <RoadmapCard lang={lang} roadmap={roadmap} />)}
+    </div>
+  </div>
+</section>
+
+<!-- ======================= LEARN PREVIEW ======================= -->
+<section id="learn" class="section section-alt">
+  <div class="container">
+    <div class="grid grid-2 learn-grid">
+      <div class="learn-copy">
+        <div class="section-header">
+          <h2>{t.sections.learn}</h2>
+          <p>{t.sections.learnSub}</p>
+        </div>
+
+        <div class="learn-chain card">
+          <a class="learn-chain-step" href={localizePath(lang, `/tools/${ohmsLawTool.category}/${ohmsLawTool.slug}`)}>
+            <span class="badge">{ohmsLawTool.title[lang]}</span>
+          </a>
+          <svg class="learn-chain-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <a class="learn-chain-step" href={localizePath(lang, '/learn/electrical/ohms-law')}>
+            <span class="badge badge-muted">{t.labels.learnConcept}</span>
+          </a>
+          <svg class="learn-chain-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <a class="learn-chain-step" href={localizePath(lang, '/roadmaps/electrical-engineering')}>
+            <span class="badge badge-muted">{t.labels.viewRoadmap}</span>
+          </a>
+        </div>
+      </div>
+
+      <OhmsLawVisual
+        label={lang === 'ar'
+          ? 'رسم توضيحي لدارة كهربائية بسيطة يوضح تدفق التيار عبر مقاومة'
+          : 'Illustration of a simple electrical circuit showing current flowing through a resistor'}
+      />
+    </div>
+  </div>
+</section>
+
+<!-- ======================= BLOG PREVIEW ======================= -->
+<section id="blog" class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>{t.sections.blog}</h2>
+      <p>{t.sections.blogSub}</p>
+    </div>
+    <div class="grid grid-2 blog-grid">
+      {
+        blogPreview.map((post) => (
+          <div class="blog-card card">
+            <span class="badge badge-muted">{t.labels.planned}</span>
+            <h3>{post.title[lang]}</h3>
+            <p>{post.excerpt[lang]}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FINAL CTA ======================= -->
+<section class="section final-cta">
+  <div class="container final-cta-inner">
+    <h2>{t.sections.finalCta}</h2>
+    <p>{t.sections.finalCtaSub}</p>
+    <a href={`${localizePath(lang, '/')}#popular-tools`} class="btn btn-primary">
+      {t.sections.finalCtaButton}
+    </a>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-block: var(--space-9) var(--space-8);
+    background: radial-gradient(
+      circle at 50% -10%,
+      color-mix(in srgb, var(--color-primary) 10%, transparent),
+      transparent 55%
+    );
+  }
+
+  .hero-inner {
+    max-width: 780px;
+    text-align: center;
+    margin-inline: auto;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 1.5rem + 2.2vw, 3.25rem);
+  }
+
+  .hero-subtext {
+    margin-top: var(--space-4);
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  .hero-ctas {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    flex-wrap: wrap;
+  }
+
+  .hero-search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-7) auto 0;
+    max-width: 560px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    padding: 0.9rem 1.3rem;
+    color: var(--color-text-muted);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hero-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .hero-search input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .hero-search input:disabled {
+    cursor: not-allowed;
+  }
+
+  .section-alt {
+    background: var(--color-surface);
+  }
+
+  .learn-grid {
+    align-items: center;
+  }
+
+  .learn-chain {
+    margin-top: var(--space-6);
+    padding: var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .learn-chain-arrow {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  [dir='rtl'] .learn-chain-arrow {
+    transform: scaleX(-1);
+  }
+
+  .blog-card {
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .blog-card h3 {
+    font-size: 1.0625rem;
+    margin-top: var(--space-1);
+  }
+
+  .blog-card p {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .final-cta {
+    text-align: center;
+  }
+
+  .final-cta-inner {
+    max-width: 560px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .final-cta h2 {
+    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
+  }
+
+  .final-cta p {
+    color: var(--color-text-muted);
+    font-size: 1.0625rem;
+    margin-bottom: var(--space-2);
+  }
+
+  @media (max-width: 720px) {
+    .learn-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

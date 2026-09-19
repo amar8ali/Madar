@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LearnIndexPage from '../../../components/LearnIndexPage.astro';
+import { useTranslations } from '../../../i18n/utils';
+
+const lang = 'ar';
+const t = useTranslations(lang);
+---
+
+<BaseLayout lang={lang} title={t.learnPage.allLearn} description={t.sections.learnSub}>
+  <LearnIndexPage lang={lang} />
+</BaseLayout>

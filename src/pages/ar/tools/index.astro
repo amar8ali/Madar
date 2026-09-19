@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import CategoryCard from '../../../components/CategoryCard.astro';
+import { categories } from '../../../data/categories';
+import { useTranslations, localizePath } from '../../../i18n/utils';
+
+const lang = 'ar';
+const t = useTranslations(lang);
+---
+
+<BaseLayout lang={lang} title={t.nav.tools} description={t.sections.categoriesSub}>
+  <article class="tools-index">
+    <div class="container">
+      <Breadcrumb
+        items={[
+          { label: t.toolPage.home, href: localizePath(lang, '/') },
+          { label: t.toolPage.tools },
+        ]}
+      />
+      <header class="tools-index-header">
+        <h1>{t.nav.tools}</h1>
+        <p>{t.sections.categoriesSub}</p>
+      </header>
+      <div class="grid grid-categories">
+        {categories.map((category) => <CategoryCard lang={lang} category={category} />)}
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .tools-index {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+
+  .tools-index-header {
+    max-width: 640px;
+    margin-bottom: var(--space-7);
+  }
+
+  .tools-index-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  }
+
+  .tools-index-header p {
+    margin-top: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: 1.0625rem;
+  }
+</style>

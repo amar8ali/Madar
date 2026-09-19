@@ -1,0 +1,124 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import Breadcrumb from './Breadcrumb.astro';
+import { learnPages } from '../data/learn';
+import { engineeringSubcategories } from '../data/categories';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Grouped by category so the index reads as a knowledge map, not a
+// flat dump — same idea as the Tool category page grouping. Empty
+// categories are skipped here (unlike the Tool category page, which
+// intentionally shows all categories to prove the architecture scales;
+// the Learn index instead only surfaces categories with real content,
+// since this is the page search engines and visitors browse first).
+const groups = engineeringSubcategories
+  .map((category) => ({
+    category,
+    pages: learnPages.filter((page) => page.category === category.id),
+  }))
+  .filter((group) => group.pages.length > 0);
+
+const breadcrumbItems = [
+  { label: t.toolPage.home, href: localizePath(lang, '/') },
+  { label: t.learnPage.learn },
+];
+---
+
+<article class="learn-index">
+  <div class="container">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <header class="learn-index-header">
+      <h1>{t.learnPage.allLearn}</h1>
+      <p>{t.sections.learnSub}</p>
+    </header>
+
+    {
+      groups.map((group) => (
+        <section class="learn-group">
+          <div class="learn-group-head">
+            <h2>
+              <a href={localizePath(lang, `/learn/${group.category.id}`)}>{group.category.title[lang]}</a>
+            </h2>
+          </div>
+          <ul class="learn-list">
+            {group.pages.map((page) => (
+              <li>
+                <a href={localizePath(lang, `/learn/${page.category}/${page.slug}`)} class="learn-list-item card card-interactive">
+                  <h3>{page.title[lang]}</h3>
+                  <p>{page.description[lang]}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</article>
+
+<style>
+  .learn-index {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+  .learn-index-header {
+    max-width: 640px;
+    margin-bottom: var(--space-7);
+  }
+
+  .learn-index-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  }
+
+  .learn-index-header p {
+    margin-top: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: 1.0625rem;
+  }
+
+  .learn-group {
+    margin-bottom: var(--space-8);
+  }
+
+  .learn-group-head h2 {
+    font-size: 1.0625rem;
+    margin-bottom: var(--space-4);
+  }
+
+  .learn-group-head h2 a {
+    color: var(--color-text);
+  }
+
+  .learn-group-head h2 a:hover {
+    color: var(--color-primary);
+  }
+
+  .learn-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-5);
+  }
+
+  .learn-list-item {
+    display: block;
+    padding: var(--space-5);
+  }
+
+  .learn-list-item h3 {
+    font-size: 1.0625rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .learn-list-item p {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+</style>

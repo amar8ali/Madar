@@ -1,0 +1,89 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import type { EngineeringSubcategoryDefinition } from '../data/types';
+import { getLearnByCategory } from '../data/learn';
+import Breadcrumb from './Breadcrumb.astro';
+
+interface Props {
+  lang: Lang;
+  category: EngineeringSubcategoryDefinition;
+}
+
+const { lang, category } = Astro.props;
+const t = useTranslations(lang);
+const pages = getLearnByCategory(category.id);
+
+const breadcrumbItems = [
+  { label: t.toolPage.home, href: localizePath(lang, '/') },
+  { label: t.learnPage.learn, href: localizePath(lang, '/learn') },
+  { label: category.title[lang] },
+];
+---
+
+<article class="learn-category-page">
+  <div class="container">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <header class="category-header">
+      <h1>{category.title[lang]}</h1>
+    </header>
+
+    {
+      pages.length === 0 ? (
+        <p class="empty-state">{t.learnPage.noContentYet}</p>
+      ) : (
+        <ul class="learn-list">
+          {pages.map((page) => (
+            <li>
+              <a href={localizePath(lang, `/learn/${page.category}/${page.slug}`)} class="learn-list-item card card-interactive">
+                <h2>{page.title[lang]}</h2>
+                <p>{page.description[lang]}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .learn-category-page {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+  .category-header {
+    margin-bottom: var(--space-7);
+  }
+
+  .category-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  }
+
+  .learn-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-5);
+  }
+
+  .learn-list-item {
+    display: block;
+    padding: var(--space-5);
+  }
+
+  .learn-list-item h2 {
+    font-size: 1.0625rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .learn-list-item p {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .empty-state {
+    color: var(--color-text-muted);
+    padding-block: var(--space-6);
+  }
+</style>

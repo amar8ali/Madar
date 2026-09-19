@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import LearnPage from '../../../../components/LearnPage.astro';
+import { learnPages } from '../../../../data/learn';
+import type { LearnDefinition } from '../../../../data/types';
+
+interface Props {
+  learn: LearnDefinition;
+}
+
+export function getStaticPaths() {
+  return learnPages.map((learn) => ({
+    params: { category: learn.category, slug: learn.slug },
+    props: { learn },
+  }));
+}
+
+const { learn } = Astro.props;
+const pageTitle = learn.seo?.title?.en ?? learn.title.en;
+const pageDescription = learn.seo?.description?.en ?? learn.description.en;
+---
+
+<BaseLayout lang="en" title={pageTitle} description={pageDescription}>
+  <LearnPage lang="en" learn={learn} />
+</BaseLayout>

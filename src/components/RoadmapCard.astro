@@ -1,0 +1,88 @@
+---
+import type { Lang } from '../i18n/config';
+import type { RoadmapDefinition } from '../data/types';
+import { localizePath, useTranslations } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  roadmap: RoadmapDefinition;
+}
+
+const { lang, roadmap } = Astro.props;
+const t = useTranslations(lang);
+
+// A roadmap gets a real detail page only when it has `sections`
+// (see getStaticPaths in the roadmap route) — same
+// implemented/unimplemented pattern ToolCard uses. Roadmaps without
+// sections stay a non-linked preview card rather than a dead link.
+const hasDetailPage = Boolean(roadmap.sections?.length);
+const href = hasDetailPage ? localizePath(lang, `/roadmaps/${roadmap.slug}`) : undefined;
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag href={href} class={`roadmap-card card ${href ? 'card-interactive' : 'roadmap-card-preview'}`}>
+  {!hasDetailPage && <span class="badge badge-muted">{t.roadmapPage.previewOnly}</span>}
+  <h3>{roadmap.title[lang]}</h3>
+  <p class="roadmap-description">{roadmap.description[lang]}</p>
+  <ol class="roadmap-nodes">
+    {
+      roadmap.nodes.map((node, i) => (
+        <li>
+          <span class="node-index">{i + 1}</span>
+          <span>{node[lang]}</span>
+        </li>
+      ))
+    }
+  </ol>
+</Tag>
+
+<style>
+  .roadmap-card {
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .roadmap-card-preview {
+    cursor: default;
+    opacity: 0.9;
+  }
+
+  .roadmap-card h3 {
+    font-size: 1.0625rem;
+  }
+
+  .roadmap-description {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .roadmap-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .roadmap-nodes li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 0.875rem;
+  }
+
+  .node-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+</style>

@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ToolPage from '../../../../components/ToolPage.astro';
+import { tools } from '../../../../data/tools';
+import type { ToolDefinition } from '../../../../data/types';
+
+interface Props {
+  tool: ToolDefinition;
+}
+
+export function getStaticPaths() {
+  // Only implemented tools get a real page — mirrors the Arabic route
+  // at src/pages/ar/tools/[category]/[slug].astro exactly, just with
+  // lang="en". See that file's comment for the reasoning.
+  return tools
+    .filter((tool) => tool.implemented)
+    .map((tool) => ({
+      params: { category: tool.category, slug: tool.slug },
+      props: { tool },
+    }));
+}
+
+const { tool } = Astro.props;
+const pageTitle = tool.seo?.title?.en ?? tool.title.en;
+const pageDescription = tool.seo?.description?.en ?? tool.description.en;
+---
+
+<BaseLayout lang="en" title={pageTitle} description={pageDescription}>
+  <ToolPage lang="en" tool={tool} />
+</BaseLayout>

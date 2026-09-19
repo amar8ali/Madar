@@ -1,0 +1,199 @@
+---
+import type { Lang } from '../i18n/config';
+import { getCalculatorById } from '../lib/calculators/registry';
+
+interface Props {
+  lang: Lang;
+  /** Tool id — must have a matching entry in lib/calculators/registry.ts */
+  calculatorId: string;
+  /** UI copy, passed in rather than importing translations here so this
+   *  component stays generic and reusable outside the main tool route. */
+  labels: {
+    solveFor: string;
+    result: string;
+    reset: string;
+  };
+}
+
+const { lang, calculatorId, labels } = Astro.props;
+const calculator = getCalculatorById(calculatorId);
+
+if (!calculator) {
+  throw new Error(
+    `CalculatorForm: no calculator registered for id "${calculatorId}". ` +
+      `Add it to src/lib/calculators/registry.ts.`
+  );
+}
+
+const showSolveSelect = calculator.solveOptions.length > 1;
+---
+
+<div class="calculator" data-calculator-id={calculatorId}>
+  {
+    showSolveSelect && (
+      <div class="field solve-select-field">
+        <label for={`${calculatorId}-solve-select`}>{labels.solveFor}</label>
+        <select id={`${calculatorId}-solve-select`} data-solve-select>
+          {calculator.solveOptions.map((fieldId) => {
+            const field = calculator.fields.find((f) => f.id === fieldId)!;
+            return (
+              <option value={fieldId} selected={fieldId === calculator.defaultSolveFor}>
+                {field.label[lang]}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+    )
+  }
+
+  <div class="calculator-fields">
+    {
+      calculator.fields.map((field) => (
+        <div class="field">
+          <label for={`${calculatorId}-${field.id}`}>
+            {field.label[lang]}
+            {field.unit && <span class="field-unit">({field.unit})</span>}
+          </label>
+          <input
+            id={`${calculatorId}-${field.id}`}
+            type="number"
+            inputmode="decimal"
+            data-field={field.id}
+            min={field.min}
+            step={field.step ?? 'any'}
+            disabled={field.id === calculator.defaultSolveFor}
+            required={field.id !== calculator.defaultSolveFor}
+          />
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="calculator-output">
+    <div class="calculator-result" aria-live="polite">
+      <span class="calculator-result-label">{labels.result}</span>
+      <span class="calculator-result-value" data-result></span>
+    </div>
+    <p class="calculator-error" role="alert" data-error></p>
+    <button type="button" class="btn btn-secondary" data-reset>
+      {labels.reset}
+    </button>
+  </div>
+</div>
+
+<style>
+  .calculator {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+  }
+
+  .calculator-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--space-4);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .solve-select-field {
+    margin-bottom: var(--space-5);
+    max-width: 320px;
+  }
+
+  .field label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .field-unit {
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  .field input,
+  .field select {
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .field input:focus-visible,
+  .field select:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+  }
+
+  .field input:disabled {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+  }
+
+  .calculator-output {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+
+  .calculator-result {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+
+  .calculator-result-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  .calculator-result-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calculator-error {
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    margin: 0;
+    flex-basis: 100%;
+  }
+
+  .calculator-error:empty {
+    display: none;
+  }
+</style>
+
+<script>
+  import { mountCalculator } from '../lib/calculators/runtime';
+  import { getCalculatorById as getCalc } from '../lib/calculators/registry';
+
+  document.querySelectorAll<HTMLElement>('.calculator[data-calculator-id]').forEach((root) => {
+    if (root.dataset.mounted === 'true') return;
+    const id = root.dataset.calculatorId;
+    if (!id) return;
+    const def = getCalc(id);
+    if (!def) return;
+    mountCalculator(root, def);
+    root.dataset.mounted = 'true';
+  });
+</script>

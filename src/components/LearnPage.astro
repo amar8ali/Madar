@@ -1,0 +1,380 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import type { LearnDefinition } from '../data/types';
+import { resolveLearnPath } from '../data/learn';
+import { getToolById } from '../data/tools';
+import { getRoadmapById } from '../data/roadmaps';
+import { engineeringSubcategories } from '../data/categories';
+import Breadcrumb from './Breadcrumb.astro';
+
+interface Props {
+  lang: Lang;
+  learn: LearnDefinition;
+}
+
+const { lang, learn } = Astro.props;
+const t = useTranslations(lang);
+
+const categoryMeta = engineeringSubcategories.find((s) => s.id === learn.category);
+
+const relatedTools = (learn.relatedTools ?? [])
+  .map((id) => getToolById(id))
+  .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool));
+
+const relatedRoadmaps = (learn.relatedRoadmaps ?? [])
+  .map((id) => getRoadmapById(id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+const relatedLearnPages = (learn.relatedLearn ?? [])
+  .map((path) => resolveLearnPath(path))
+  .filter((l): l is NonNullable<typeof l> => Boolean(l));
+
+const breadcrumbItems = [
+  { label: t.toolPage.home, href: localizePath(lang, '/') },
+  { label: t.learnPage.learn, href: localizePath(lang, '/learn') },
+  ...(categoryMeta
+    ? [{ label: categoryMeta.title[lang], href: localizePath(lang, `/learn/${learn.category}`) }]
+    : []),
+  { label: learn.title[lang] },
+];
+
+// TechArticle is the schema.org subtype for technical/how-to explainer
+// content like this — genuinely applicable here, unlike forcing a
+// HowTo or FAQPage schema onto content that isn't really either.
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: learn.title[lang],
+  description: learn.description[lang],
+  inLanguage: lang,
+};
+
+// FAQPage schema only when there's real Q&A content to back it —
+// never added just to have structured data present.
+const faqJsonLd =
+  learn.faq && learn.faq.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: learn.faq.map((item) => ({
+          '@type': 'Question',
+          name: item.question[lang],
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.answer[lang],
+          },
+        })),
+      }
+    : null;
+---
+
+<article class="learn-page">
+  <div class="container">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <header class="learn-header">
+      {categoryMeta && <span class="badge badge-muted">{categoryMeta.title[lang]}</span>}
+      <h1>{learn.title[lang]}</h1>
+      <p class="learn-description">{learn.description[lang]}</p>
+
+      {
+        relatedTools.length > 0 && (
+          <div class="use-calculator-cta">
+            {relatedTools.map((tool) =>
+              tool.implemented ? (
+                <a
+                  href={localizePath(lang, `/tools/${tool.category}/${tool.slug}`)}
+                  class="btn btn-primary"
+                >
+                  {t.learnPage.useCalculator}: {tool.title[lang]}
+                </a>
+              ) : null
+            )}
+          </div>
+        )
+      }
+    </header>
+
+    <section class="content-block">
+      <h2>{t.learnPage.introduction}</h2>
+      <p>{learn.introduction[lang]}</p>
+    </section>
+
+    <section class="content-block">
+      <h2>{t.learnPage.keyConcepts}</h2>
+      {
+        learn.sections.map((section) => (
+          <div class="concept-section">
+            <h3>{section.heading[lang]}</h3>
+            <p>{section.body[lang]}</p>
+          </div>
+        ))
+      }
+    </section>
+
+    {
+      learn.formula && (
+        <div class="tool-content grid grid-2">
+          <section class="content-block">
+            <h2>{t.toolPage.formula}</h2>
+            <p class="formula">{learn.formula[lang]}</p>
+          </section>
+
+          {learn.variables && learn.variables.length > 0 && (
+            <section class="content-block">
+              <h2>{t.toolPage.variables}</h2>
+              <table class="variables-table">
+                <tbody>
+                  {learn.variables.map((v) => (
+                    <tr>
+                      <td class="variable-symbol">{v.symbol}</td>
+                      <td>{v.label[lang]}</td>
+                      <td class="variable-unit">{v.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
+        </div>
+      )
+    }
+
+    {
+      learn.workedExample && (
+        <section class="content-block">
+          <h2>{t.toolPage.workedExample}</h2>
+          <p>{learn.workedExample[lang]}</p>
+        </section>
+      )
+    }
+
+    {
+      learn.commonMistakes && learn.commonMistakes.length > 0 && (
+        <section class="content-block">
+          <h2>{t.toolPage.commonMistakes}</h2>
+          <ul class="bullet-list">
+            {learn.commonMistakes.map((m) => (
+              <li>{m[lang]}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      learn.faq && learn.faq.length > 0 && (
+        <section class="content-block">
+          <h2>{t.toolPage.faq}</h2>
+          <dl class="faq-list">
+            {learn.faq.map((item) => (
+              <>
+                <dt>{item.question[lang]}</dt>
+                <dd>{item.answer[lang]}</dd>
+              </>
+            ))}
+          </dl>
+        </section>
+      )
+    }
+
+    {
+      (relatedTools.length > 0 || relatedRoadmaps.length > 0 || relatedLearnPages.length > 0) && (
+        <section class="content-block related-links">
+          {relatedTools.length > 0 && (
+            <div>
+              <h3>{t.toolPage.relatedTools}</h3>
+              <ul class="bullet-list">
+                {relatedTools.map((tool) => (
+                  <li>
+                    {tool.implemented ? (
+                      <a href={localizePath(lang, `/tools/${tool.category}/${tool.slug}`)} class="link-arrow">
+                        {tool.title[lang]}
+                      </a>
+                    ) : (
+                      <span class="badge badge-muted">{tool.title[lang]}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {relatedRoadmaps.length > 0 && (
+            <div>
+              <h3>{t.toolPage.relatedRoadmap}</h3>
+              <ul class="bullet-list">
+                {relatedRoadmaps.map((roadmap) => (
+                  <li>
+                    {roadmap.sections && roadmap.sections.length > 0 ? (
+                      <a href={localizePath(lang, `/roadmaps/${roadmap.slug}`)} class="link-arrow">
+                        {roadmap.title[lang]}
+                      </a>
+                    ) : (
+                      <span class="badge badge-muted">{roadmap.title[lang]}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {relatedLearnPages.length > 0 && (
+            <div>
+              <h3>{t.toolPage.relatedLearn}</h3>
+              <ul class="bullet-list">
+                {relatedLearnPages.map((page) => (
+                  <li>
+                    <a href={localizePath(lang, `/learn/${page.category}/${page.slug}`)} class="link-arrow">
+                      {page.title[lang]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )
+    }
+  </div>
+</article>
+
+<script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+{faqJsonLd && <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
+
+<style>
+  .learn-page {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+  .learn-header {
+    max-width: 720px;
+    margin-bottom: var(--space-6);
+  }
+
+  .learn-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+    margin-top: var(--space-2);
+  }
+
+  .learn-description {
+    margin-top: var(--space-3);
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+  }
+
+  .use-calculator-cta {
+    margin-top: var(--space-5);
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .content-block {
+    margin-bottom: var(--space-8);
+  }
+
+  .content-block h2 {
+    font-size: 1.125rem;
+    margin-bottom: var(--space-3);
+  }
+
+  .content-block h3 {
+    font-size: 1rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .content-block p {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+  }
+
+  .concept-section {
+    margin-bottom: var(--space-5);
+  }
+
+  .concept-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .formula {
+    font-family: var(--font-mono);
+    font-size: 1.375rem;
+    color: var(--color-primary);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    display: inline-block;
+  }
+
+  .variables-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  .variables-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .variable-symbol {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-primary);
+    width: 2.5rem;
+  }
+
+  .variable-unit {
+    color: var(--color-text-muted);
+    text-align: end;
+  }
+
+  .bullet-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .bullet-list li {
+    padding-inline-start: var(--space-4);
+    position: relative;
+  }
+
+  .bullet-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.6em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+  }
+
+  .faq-list dt {
+    font-weight: 600;
+    margin-top: var(--space-4);
+  }
+
+  .faq-list dd {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+  }
+
+  .related-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-6);
+  }
+
+  @media (max-width: 720px) {
+    .tool-content {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

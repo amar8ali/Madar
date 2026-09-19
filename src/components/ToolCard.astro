@@ -1,0 +1,68 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import type { ToolDefinition } from '../data/types';
+
+interface Props {
+  lang: Lang;
+  tool: ToolDefinition;
+}
+
+const { lang, tool } = Astro.props;
+const t = useTranslations(lang);
+
+// Only implemented tools link to a real, working page. Unimplemented
+// tools render as a non-interactive "coming soon" card — per spec:
+// "Do not pretend that these tools are already implemented."
+const href = tool.implemented
+  ? localizePath(lang, `/tools/${tool.category}/${tool.slug}`)
+  : undefined;
+
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag href={href} class={`tool-card card ${href ? 'card-interactive' : 'tool-card-planned'}`}>
+  {!tool.implemented && (
+    <div class="tool-card-top">
+      <span class="badge badge-muted">{t.labels.planned}</span>
+    </div>
+  )}
+  <h3>{tool.title[lang]}</h3>
+  <p>{tool.description[lang]}</p>
+  {href && (
+    <span class="link-arrow">
+      {t.labels.openTool}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+  )}
+</Tag>
+
+<style>
+  .tool-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+
+  .tool-card-planned {
+    cursor: default;
+    opacity: 0.9;
+  }
+
+  .tool-card-top {
+    margin-bottom: var(--space-1);
+  }
+
+  .tool-card h3 {
+    font-size: 1.0625rem;
+  }
+
+  .tool-card p {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+    flex: 1;
+  }
+</style>

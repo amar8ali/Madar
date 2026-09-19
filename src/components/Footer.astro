@@ -1,0 +1,163 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const otherLang: Lang = lang === 'ar' ? 'en' : 'ar';
+const year = new Date().getFullYear();
+const home = localizePath(lang, '/');
+
+// Phase 1 ships only the homepage, so footer links point to the
+// corresponding in-page sections rather than standalone routes that
+// don't exist yet (/tools, /roadmaps, /learn, /blog). This keeps every
+// link honest — see spec: "If a page does not exist yet, do not
+// pretend that it does." These become real top-level routes in a
+// later phase.
+const linkGroups = [
+  {
+    heading: t.footer.tools,
+    links: [{ label: t.sections.popularTools, href: `${home}#popular-tools` }],
+  },
+  {
+    heading: t.footer.roadmaps,
+    links: [
+      { label: t.roadmapPage.allRoadmaps, href: localizePath(lang, '/roadmaps') },
+      { label: t.sections.roadmaps, href: `${home}#roadmaps` },
+    ],
+  },
+  {
+    heading: t.footer.learn,
+    links: [
+      { label: t.learnPage.allLearn, href: localizePath(lang, '/learn') },
+      { label: t.sections.learn, href: `${home}#learn` },
+    ],
+  },
+  {
+    heading: t.footer.blog,
+    links: [{ label: t.sections.blog, href: `${home}#blog` }],
+  },
+];
+---
+
+<footer class="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a href={home} class="brand">
+        <span class="brand-mark" aria-hidden="true">◆</span>
+        <span>{t.footer.company}</span>
+      </a>
+      <p class="footer-tagline">{t.footer.tagline}</p>
+    </div>
+
+    <div class="footer-groups">
+      {
+        linkGroups.map((group) => (
+          <div class="footer-group">
+            <h3>{group.heading}</h3>
+            <ul>
+              {group.links.map((link) => (
+                <li>
+                  <a href={link.href}>{link.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>&copy; {year} {t.footer.company} — {t.footer.rights}</p>
+    <div class="footer-lang">
+      <span class="sr-only">{t.footer.language}</span>
+      <LanguageSwitcher currentLang={lang} targetLang={otherLang} targetLabel={t.nav.switchLang} />
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    margin-top: var(--space-9);
+  }
+
+  .footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    padding-block: var(--space-8);
+  }
+
+  .footer-brand {
+    max-width: 280px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--color-text);
+  }
+
+  .brand-mark {
+    color: var(--color-primary);
+  }
+
+  .footer-tagline {
+    margin-top: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .footer-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-6);
+    flex: 1;
+  }
+
+  .footer-group h3 {
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
+    font-weight: 700;
+  }
+
+  .footer-group li + li {
+    margin-top: var(--space-2);
+  }
+
+  .footer-group a {
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
+
+  .footer-group a:hover {
+    color: var(--color-primary);
+  }
+
+  .footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+</style>

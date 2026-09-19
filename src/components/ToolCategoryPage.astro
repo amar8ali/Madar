@@ -1,0 +1,120 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import type { ToolCategoryDefinition } from '../data/types';
+import { getToolsByCategory } from '../data/tools';
+import { engineeringSubcategories } from '../data/categories';
+import Breadcrumb from './Breadcrumb.astro';
+import ToolCard from './ToolCard.astro';
+
+interface Props {
+  lang: Lang;
+  category: ToolCategoryDefinition;
+}
+
+const { lang, category } = Astro.props;
+const t = useTranslations(lang);
+const categoryTools = getToolsByCategory(category.id);
+
+const breadcrumbItems = [
+  { label: t.toolPage.home, href: localizePath(lang, '/') },
+  { label: t.toolPage.tools, href: localizePath(lang, '/tools') },
+  { label: category.title[lang] },
+];
+
+// Engineering is the one category with subcategories (spec section 9).
+// Group its tools by subcategory; everything else stays a flat grid.
+const isEngineering = category.id === 'engineering';
+const groups = isEngineering
+  ? engineeringSubcategories
+      .map((sub) => ({
+        subcategory: sub,
+        tools: categoryTools.filter((tool) => tool.subcategory === sub.id),
+      }))
+      .filter((group) => group.tools.length > 0)
+  : [];
+
+// Tools in this category without a matching subcategory group (or when
+// the category isn't Engineering at all) render in a flat grid.
+const ungroupedTools = isEngineering
+  ? categoryTools.filter((tool) => !tool.subcategory)
+  : categoryTools;
+---
+
+<article class="category-page">
+  <div class="container">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <header class="category-header">
+      <h1>{category.title[lang]}</h1>
+      <p>{category.description[lang]}</p>
+    </header>
+
+    {
+      categoryTools.length === 0 ? (
+        <p class="empty-state">{t.toolPage.noToolsYet}</p>
+      ) : (
+        <>
+          {groups.map((group) => (
+            <section class="tool-group">
+              <h2>{group.subcategory.title[lang]}</h2>
+              <div class="grid grid-tools">
+                {group.tools.map((tool) => (
+                  <ToolCard lang={lang} tool={tool} />
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {ungroupedTools.length > 0 && (
+            <section class="tool-group">
+              {groups.length > 0 && <h2>{category.title[lang]}</h2>}
+              <div class="grid grid-tools">
+                {ungroupedTools.map((tool) => (
+                  <ToolCard lang={lang} tool={tool} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .category-page {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+
+  .category-header {
+    max-width: 640px;
+    margin-bottom: var(--space-7);
+  }
+
+  .category-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  }
+
+  .category-header p {
+    margin-top: var(--space-3);
+    color: var(--color-text-muted);
+    font-size: 1.0625rem;
+  }
+
+  .tool-group {
+    margin-bottom: var(--space-7);
+  }
+
+  .tool-group h2 {
+    font-size: 1.0625rem;
+    margin-bottom: var(--space-4);
+    color: var(--color-text-muted);
+  }
+
+  .empty-state {
+    color: var(--color-text-muted);
+    padding-block: var(--space-6);
+  }
+</style>

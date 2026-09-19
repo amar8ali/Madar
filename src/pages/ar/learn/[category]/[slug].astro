@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import LearnPage from '../../../../components/LearnPage.astro';
+import { learnPages } from '../../../../data/learn';
+import type { LearnDefinition } from '../../../../data/types';
+
+interface Props {
+  learn: LearnDefinition;
+}
+
+export function getStaticPaths() {
+  // Every entry in the Learn dataset gets a real page — see the module
+  // doc in src/data/learn.ts for why Learn doesn't need an
+  // "implemented" gate the way Tools and Roadmaps do.
+  return learnPages.map((learn) => ({
+    params: { category: learn.category, slug: learn.slug },
+    props: { learn },
+  }));
+}
+
+const { learn } = Astro.props;
+const pageTitle = learn.seo?.title?.ar ?? learn.title.ar;
+const pageDescription = learn.seo?.description?.ar ?? learn.description.ar;
+---
+
+<BaseLayout lang="ar" title={pageTitle} description={pageDescription}>
+  <LearnPage lang="ar" learn={learn} />
+</BaseLayout>

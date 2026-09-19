@@ -1,0 +1,40 @@
+---
+import { defaultLang, LANG_STORAGE_KEY, languages } from '../i18n/config';
+
+// This is a static site (no SSR adapter), so we can't read cookies or
+// localStorage on the server to redirect "/" straight to the right
+// language. Instead: a no-JS meta-refresh to the default language
+// (Arabic, per spec section 3) as the reliable fallback, plus a small
+// inline script that redirects to the visitor's remembered language
+// preference when one exists. The script runs before paint and race
+// -condition-free — meta refresh only fires after the script would
+// already have navigated away.
+const fallbackHref = `/${defaultLang}/`;
+---
+
+<!doctype html>
+<html lang={defaultLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content={`0;url=${fallbackHref}`} />
+    <link rel="canonical" href={fallbackHref} />
+    <title>MADAR</title>
+  </head>
+  <body>
+    <p>
+      <a href={fallbackHref}>Continue to MADAR</a>
+    </p>
+    <script is:inline define:vars={{ LANG_STORAGE_KEY, languages, defaultLang }}>
+      (function () {
+        try {
+          var stored = localStorage.getItem(LANG_STORAGE_KEY);
+          var target = languages.indexOf(stored) !== -1 ? stored : defaultLang;
+          window.location.replace('/' + target + '/');
+        } catch (e) {
+          window.location.replace('/' + defaultLang + '/');
+        }
+      })();
+    </script>
+  </body>
+</html>

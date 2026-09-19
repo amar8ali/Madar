@@ -1,0 +1,265 @@
+---
+import type { Lang } from '../i18n/config';
+import { useTranslations, localizePath } from '../i18n/utils';
+import type { RoadmapDefinition } from '../data/types';
+import { resolveLearnPath } from '../data/learn';
+import { getToolById } from '../data/tools';
+import { getRoadmapById } from '../data/roadmaps';
+import Breadcrumb from './Breadcrumb.astro';
+
+interface Props {
+  lang: Lang;
+  roadmap: RoadmapDefinition;
+}
+
+const { lang, roadmap } = Astro.props;
+const t = useTranslations(lang);
+
+const relatedRoadmaps = (roadmap.relatedRoadmaps ?? [])
+  .map((id) => getRoadmapById(id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+const breadcrumbItems = [
+  { label: t.toolPage.home, href: localizePath(lang, '/') },
+  { label: t.roadmapPage.roadmaps, href: localizePath(lang, '/roadmaps') },
+  { label: roadmap.title[lang] },
+];
+
+// Resolve a topic's related-content links once, at build time, so the
+// template stays purely presentational.
+function resolveTopicLinks(topicRelatedLearn?: string[], topicRelatedTools?: string[]) {
+  const learnLinks = (topicRelatedLearn ?? [])
+    .map((path) => resolveLearnPath(path))
+    .filter((l): l is NonNullable<typeof l> => Boolean(l));
+  const toolLinks = (topicRelatedTools ?? [])
+    .map((id) => getToolById(id))
+    .filter((tl): tl is NonNullable<typeof tl> => Boolean(tl) && tl.implemented);
+  return { learnLinks, toolLinks };
+}
+
+// schema.org has no dedicated "learning roadmap" type; forcing Course
+// or ItemList onto this content would be a stretch, and Phase 3's
+// instructions are explicit about avoiding invalid/misleading schema.
+// BreadcrumbList (via <Breadcrumb>) is the only structured data this
+// page emits.
+---
+
+<article class="roadmap-page">
+  <div class="container">
+    <Breadcrumb items={breadcrumbItems} />
+
+    <header class="roadmap-header">
+      <h1>{roadmap.title[lang]}</h1>
+      <p class="roadmap-description">{roadmap.description[lang]}</p>
+    </header>
+
+    {
+      roadmap.introduction && (
+        <section class="content-block">
+          <h2>{t.roadmapPage.introduction}</h2>
+          <p>{roadmap.introduction[lang]}</p>
+        </section>
+      )
+    }
+
+    {
+      roadmap.prerequisites && roadmap.prerequisites.length > 0 && (
+        <section class="content-block">
+          <h2>{t.roadmapPage.prerequisites}</h2>
+          <ul class="bullet-list">
+            {roadmap.prerequisites.map((p) => (
+              <li>{p[lang]}</li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      roadmap.sections && (
+        <section class="roadmap-sections">
+          {roadmap.sections.map((section) => (
+            <div class="roadmap-section">
+              <h2>{section.title[lang]}</h2>
+              <ol class="topic-list">
+                {section.topics.map((topic) => {
+                  const { learnLinks, toolLinks } = resolveTopicLinks(topic.relatedLearn, topic.relatedTools);
+                  return (
+                    <li class="topic-item">
+                      <span class="topic-title">{topic.title[lang]}</span>
+                      {(learnLinks.length > 0 || toolLinks.length > 0) && (
+                        <span class="topic-links">
+                          {learnLinks.map((page) => (
+                            <a href={localizePath(lang, `/learn/${page.category}/${page.slug}`)} class="topic-link">
+                              {t.labels.learnConcept}
+                            </a>
+                          ))}
+                          {toolLinks.map((tool) => (
+                            <a href={localizePath(lang, `/tools/${tool.category}/${tool.slug}`)} class="topic-link">
+                              {t.labels.openTool}
+                            </a>
+                          ))}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ))}
+        </section>
+      )
+    }
+
+    {
+      relatedRoadmaps.length > 0 && (
+        <section class="content-block">
+          <h2>{t.roadmapPage.relatedRoadmaps}</h2>
+          <ul class="bullet-list">
+            {relatedRoadmaps.map((related) => (
+              <li>
+                {related.sections && related.sections.length > 0 ? (
+                  <a href={localizePath(lang, `/roadmaps/${related.slug}`)} class="link-arrow">
+                    {related.title[lang]}
+                  </a>
+                ) : (
+                  <span class="badge badge-muted">{related.title[lang]}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .roadmap-page {
+    padding-block: var(--space-6) var(--space-9);
+  }
+
+  .roadmap-header {
+    max-width: 720px;
+    margin-bottom: var(--space-6);
+  }
+
+  .roadmap-header h1 {
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  }
+
+  .roadmap-description {
+    margin-top: var(--space-3);
+    font-size: 1.0625rem;
+    color: var(--color-text-muted);
+  }
+
+  .content-block {
+    margin-bottom: var(--space-8);
+    max-width: 720px;
+  }
+
+  .content-block h2 {
+    font-size: 1.125rem;
+    margin-bottom: var(--space-3);
+  }
+
+  .content-block p {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+  }
+
+  .bullet-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .bullet-list li {
+    padding-inline-start: var(--space-4);
+    position: relative;
+  }
+
+  .bullet-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.6em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+  }
+
+  .roadmap-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+    margin-bottom: var(--space-8);
+  }
+
+  .roadmap-section h2 {
+    font-size: 1.0625rem;
+    margin-bottom: var(--space-4);
+    color: var(--color-text-muted);
+  }
+
+  .topic-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    counter-reset: topic;
+  }
+
+  .topic-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    counter-increment: topic;
+  }
+
+  .topic-item::before {
+    content: counter(topic);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-inline-end: var(--space-3);
+    flex-shrink: 0;
+  }
+
+  .topic-title {
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .topic-links {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .topic-link {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    white-space: nowrap;
+  }
+
+  .topic-link:hover {
+    text-decoration: underline;
+  }
+</style>

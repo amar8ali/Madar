@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Sitemap will be added once routes beyond the homepage exist.

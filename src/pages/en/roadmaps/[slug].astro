@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import RoadmapPage from '../../../components/RoadmapPage.astro';
+import { getRoadmapsWithDetailPage } from '../../../data/roadmaps';
+import type { RoadmapDefinition } from '../../../data/types';
+
+interface Props {
+  roadmap: RoadmapDefinition;
+}
+
+export function getStaticPaths() {
+  return getRoadmapsWithDetailPage().map((roadmap) => ({
+    params: { slug: roadmap.slug },
+    props: { roadmap },
+  }));
+}
+
+const { roadmap } = Astro.props;
+const pageTitle = roadmap.seo?.title?.en ?? roadmap.title.en;
+const pageDescription = roadmap.seo?.description?.en ?? roadmap.description.en;
+---
+
+<BaseLayout lang="en" title={pageTitle} description={pageDescription}>
+  <RoadmapPage lang="en" roadmap={roadmap} />
+</BaseLayout>

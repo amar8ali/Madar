@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ToolPage from '../../../../components/ToolPage.astro';
+import { tools } from '../../../../data/tools';
+import type { ToolDefinition } from '../../../../data/types';
+
+interface Props {
+  tool: ToolDefinition;
+}
+
+export function getStaticPaths() {
+  // Only implemented tools get a real page. This is the Tool Engine's
+  // core guarantee: a tool page exists if and only if
+  // ToolDefinition.implemented is true — never a page for something
+  // that doesn't actually work yet.
+  return tools
+    .filter((tool) => tool.implemented)
+    .map((tool) => ({
+      params: { category: tool.category, slug: tool.slug },
+      props: { tool },
+    }));
+}
+
+const { tool } = Astro.props;
+const pageTitle = tool.seo?.title?.ar ?? tool.title.ar;
+const pageDescription = tool.seo?.description?.ar ?? tool.description.ar;
+---
+
+<BaseLayout lang="ar" title={pageTitle} description={pageDescription}>
+  <ToolPage lang="ar" tool={tool} />
+</BaseLayout>
